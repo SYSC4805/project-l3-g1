@@ -4,20 +4,23 @@ const int M1_SPEED = 4;
 const int M2_DIR = 3;
 const int M2_SPEED = 5;
 
+// Watchdog Timer Variables
+unsigned long lastCommandTime = 0;
+const unsigned long watchdogTimeout = 1000;  // Timeout in milliseconds (1 second)
+
 void setup() {
-  // Set up motor pins
   pinMode(M1_DIR, OUTPUT);
   pinMode(M1_SPEED, OUTPUT);
   pinMode(M2_DIR, OUTPUT);
   pinMode(M2_SPEED, OUTPUT);
 
-  // Initialize Serial for communication with Due
-  Serial.begin(9600);
+  Serial.begin(9600);  // Initialize Serial for communication with Due
 }
 
 void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
+    lastCommandTime = millis();  // Reset watchdog timer on each command
 
     if (command == "STOP") {
       stopMotors();
@@ -30,6 +33,11 @@ void loop() {
     } else if (command == "FORWARD") {
       moveForward();
     }
+  }
+
+  // Watchdog timer check
+  if (millis() - lastCommandTime > watchdogTimeout) {
+    stopMotors();  // Stop motors if no command is received within the timeout
   }
 }
 
